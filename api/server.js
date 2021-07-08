@@ -1,18 +1,18 @@
 // BUILD YOUR SERVER HERE
 const express = require('express'); 
+const User = require('./users/model');
+const bodyParser = require('body-parser');
 const app = express(); 
 module.exports = app // EXPORT YOUR SERVER instead of {}
 
-
-const User = require('./users/model');
-
-
-
+app.use(bodyParser.json()); 
 app.use(express.json()); 
+
 
 app.post('/api/users', async (req, res) => {
 const newUser = req.body; 
 await User.insert(newUser);
+
 res.status(201).json(newUser)
 });
 
