@@ -1,42 +1,92 @@
 // BUILD YOUR SERVER HERE
 const express = require('express'); 
 const User = require('./users/model');
-const bodyParser = require('body-parser');
-const app = express(); 
-module.exports = app // EXPORT YOUR SERVER instead of {}
+const server = express(); 
+module.exports = server // EXPORT YOUR SERVER instead of {}
 
-app.use(bodyParser.json()); 
-app.use(express.json()); 
+server.use(express.json()); 
 
 
-app.post('/api/users', async (req, res) => {
+server.post('/api/users', (req, res) => {
 const newUser = req.body; 
-await User.insert(newUser);
-
-res.status(201).json(newUser)
+User.insert(newUser)
+.then(user => {
+if(!user.name || !user.bio){
+    res.status(400).json({ message: "Please provide name and bio for the user" });
+}else{
+    res.status(201).json(user);
+}
+})
+.catch(err => {
+    console.log(err)
+})
 });
 
-app.get('/api/users', async (req, res) => {
-    const users = await User.find();
-    res.json(users)
+server.get('/api/users',  (req, res) => {
+    User.find()
+    .then(users => {
+        res.json(users)
+    })
+    .catch(err => {
+        res.status(500).json({message:"The users information could not be retrieved"})
+        console.log(err);
+    })
+    
 });
 
-app.get('/api/users/:id', async (req, res) =>{
+server.get('/api/users/:id', (req, res) =>{
     const {id} = req.params 
-
-    const user = await User.findById(id); 
-    res.json(user); 
+    User.findById(id) 
+    .then( user => {
+        if(user){
+            res.json(user);
+        } else{
+            res.status(404).json({ message: "The user with the specified ID does not exist" });
+        }
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({message:"Error getting user"});
+    })
+     
 })
 
-app.delete('/api/users/:id', async (req, res) => {
+server.delete('/api/users/:id', async (req, res) => {
     const {id} = req.params
-    const user = await User.remove(id)
-    res.json(user); 
+    User.remove(id)
+    .then(user => {
+        if(!user){
+            res.status(404).json({message:"The user with the specified ID does not exist"})
+        }else{
+            res.json(user);
+        }
+       
+    })
+    .catch(err => {
+        console.log(err)
+    })
+     
 });
 
-app.put('/api/users/:id', async (req, res) => {
-    const newUser = req.body; 
+server.put('/api/users/:id',  (req, res) => {
+    const updatedUser = req.body; 
     const {id} = req.params
-         await User.update(id, newUser); 
-    res.json(newUser); 
+    User.update(id, updatedUser)
+         .then(user => {
+            if(!user){ /// if the user id is wrong, this will fire. 
+                return  res.status(404).json({message:"The user with the specified ID does not exist"})
+             }
+            if (!user.name || !user.bio){
+                return res.status(400).json({message:"Please provide name and bio for the user"})
+                 } 
+                
+                 
+                return res.status(200).json(user); 
+
+            })
+         .catch(err => {
+             console.log(err);
+             res.status(500).json({ message: "The user information could not be modified" });
+         })
+    
 })
